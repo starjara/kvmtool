@@ -14,6 +14,7 @@
 #include "kvm/builtin-stat.h"
 #include "kvm/builtin-help.h"
 #include "kvm/builtin-sandbox.h"
+#include "kvm/builtin-mini.h" //custom command
 #include "kvm/kvm-cmd.h"
 #include "kvm/builtin-run.h"
 #include "kvm/util.h"
@@ -32,6 +33,7 @@ struct cmd_struct kvm_commands[] = {
 	{ "setup",	kvm_cmd_setup,		kvm_setup_help,		0 },
 	{ "run",	kvm_cmd_run,		kvm_run_help,		0 },
 	{ "sandbox",	kvm_cmd_sandbox,	kvm_run_help,		0 },
+    { "mini", kvm_cmd_mini, kvm_mini_help, 0},
 	{ NULL,		NULL,			NULL,			0 },
 };
 

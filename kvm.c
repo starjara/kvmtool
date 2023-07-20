@@ -245,6 +245,8 @@ int kvm__register_mem(struct kvm *kvm, u64 guest_phys, u64 size,
 	u32 flags = 0;
 	int ret;
 
+    pr_debug("[lkvm] kvm__register_mem");
+
 	mutex_lock(&kvm->mem_banks_lock);
 	/* Check for overlap and find first empty slot. */
 	slot = 0;
@@ -314,6 +316,8 @@ int kvm__register_mem(struct kvm *kvm, u64 guest_phys, u64 size,
 	bank->type			= type;
 	bank->slot			= slot;
 
+    pr_debug("\t[lkvm] guest_phys_addr : 0x%lx, host_addr : 0x%lx, size : 0x%lx", (long)guest_phys, (long)userspace_addr, (long)size);
+
 	if (type & KVM_MEM_TYPE_READONLY)
 		flags |= KVM_MEM_READONLY;
 
@@ -349,9 +353,14 @@ void *guest_flat_to_host(struct kvm *kvm, u64 offset)
 	list_for_each_entry(bank, &kvm->mem_banks, list) {
 		u64 bank_start = bank->guest_phys_addr;
 		u64 bank_end = bank_start + bank->size;
+        
+        //pr_debug("[lkvm] guest_flat_to_host");
 
-		if (offset >= bank_start && offset < bank_end)
+		if (offset >= bank_start && offset < bank_end) {
+            //pr_debug("\t[lkvm] guest : 0x%llx", (unsigned long long)offset);
+            //pr_debug("\t[lkvm] host : 0x%llx", (unsigned long long)(bank->host_addr + (offset - bank_start)));
 			return bank->host_addr + (offset - bank_start);
+        }
 	}
 
 	pr_warning("unable to translate guest address 0x%llx to host",
@@ -367,8 +376,10 @@ u64 host_to_guest_flat(struct kvm *kvm, void *ptr)
 		void *bank_start = bank->host_addr;
 		void *bank_end = bank_start + bank->size;
 
-		if (ptr >= bank_start && ptr < bank_end)
+		if (ptr >= bank_start && ptr < bank_end) {
+            //pr_debug("[lkvm] host_to_guest_flat host : 0x%llx to guest : 0x%llx", (unsigned long long)ptr, (unsigned long long)(bank->guest_phys_addr + (ptr - bank_start)));
 			return bank->guest_phys_addr + (ptr - bank_start);
+        }
 	}
 
 	pr_warning("unable to translate host address %p to guest", ptr);
@@ -436,6 +447,8 @@ int __attribute__((weak)) kvm__get_vm_type(struct kvm *kvm)
 int kvm__init(struct kvm *kvm)
 {
 	int ret;
+
+    pr_debug("[lkvm] kvm__init");
 
 	if (!kvm__arch_cpu_supports_vm()) {
 		pr_err("Your CPU does not support hardware virtualization");
@@ -545,6 +558,7 @@ void kvm__dump_mem(struct kvm *kvm, unsigned long addr, unsigned long size, int 
 	unsigned char *p;
 	unsigned long n;
 
+    //pr_debug("[lkvm] kvm__dump_mem\n");
 	size &= ~7; /* mod 8 */
 	if (!size)
 		return;
@@ -581,6 +595,8 @@ void kvm__pause(struct kvm *kvm)
 	int i, paused_vcpus = 0;
 
 	mutex_lock(&pause_lock);
+
+    pr_debug("[lkvm] kvm__pause");
 
 	/* Check if the guest is running */
 	if (!kvm->cpus || !kvm->cpus[0] || kvm->cpus[0]->thread == 0)

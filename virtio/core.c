@@ -328,6 +328,8 @@ int virtio_init(struct kvm *kvm, void *dev, struct virtio_device *vdev,
 	void *virtio;
 	int r;
 
+    pr_debug("[lkvm] virtio_init");
+
 	switch (trans) {
 	case VIRTIO_PCI_LEGACY:
 		vdev->legacy			= true;

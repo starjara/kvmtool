@@ -135,6 +135,7 @@ static void generate_cpu_nodes(void *fdt, struct kvm *kvm)
 
 static int setup_fdt(struct kvm *kvm)
 {
+    pr_debug("[lkvm] setup_fdt");
 	struct device_header *dev_hdr;
 	u8 staging_fdt[FDT_MAX_SIZE];
 	u64 mem_reg_prop[]	= {
@@ -147,6 +148,7 @@ static int setup_fdt(struct kvm *kvm)
 						     kvm->arch.dtb_guest_start);
 	void (*generate_mmio_fdt_nodes)(void *, struct device_header *,
 					void (*)(void *, u8, enum irq_type));
+
 
 	/* Create new tree without a reserve map */
 	_FDT(fdt_create(fdt, FDT_MAX_SIZE));

@@ -38,12 +38,16 @@ void kvm__init_ram(struct kvm *kvm)
 	phys_size	= kvm->ram_size;
 	host_mem	= kvm->ram_start;
 
+    pr_debug("[lkvm] kvm__init_ram");
+
 	err = kvm__register_ram(kvm, phys_start, phys_size, host_mem);
 	if (err)
 		die("Failed to register %lld bytes of memory at physical "
 		    "address 0x%llx [err %d]", phys_size, phys_start, err);
 
 	kvm->arch.memory_guest_start = phys_start;
+
+    pr_debug("\t[lkvm] kvm->arch.memory_guest_start : 0x%llx", kvm->arch.memory_guest_start);
 }
 
 void kvm__arch_delete_ram(struct kvm *kvm)
@@ -69,11 +73,16 @@ void kvm__arch_init(struct kvm *kvm)
 	 * If using THP, then our minimal alignment becomes 2M.
 	 * 2M trumps 64K, so let's go with that.
 	 */
+    pr_debug("[lkvm] kvm__arch_init");
 	kvm->ram_size = min(kvm->cfg.ram_size, (u64)RISCV_MAX_MEMORY(kvm));
 	kvm->arch.ram_alloc_size = kvm->ram_size + SZ_2M;
 	kvm->arch.ram_alloc_start = mmap_anon_or_hugetlbfs(kvm,
 						kvm->cfg.hugetlbfs_path,
 						kvm->arch.ram_alloc_size);
+
+    pr_debug("\t[lkvm] kvm->ram_size: 0x%lx", (unsigned long int)kvm->ram_size);
+    pr_debug("\t[lkvm] kvm->arch.ram_alloc_start : 0x%lx", (unsigned long int)kvm->arch.ram_alloc_start);
+    pr_debug("\t[lkvm] kvm->arch.ram_alloc_size : 0x%lx", (unsigned long int)kvm->arch.ram_alloc_size);
 
 	if (kvm->arch.ram_alloc_start == MAP_FAILED)
 		die("Failed to map %lld bytes for guest memory (%d)",
@@ -81,6 +90,8 @@ void kvm__arch_init(struct kvm *kvm)
 
 	kvm->ram_start = (void *)ALIGN((unsigned long)kvm->arch.ram_alloc_start,
 					SZ_2M);
+
+    pr_debug("\t[lkvm] kvm->ram_start : 0x%lx", (unsigned long)kvm->ram_start);
 
 	madvise(kvm->arch.ram_alloc_start, kvm->arch.ram_alloc_size,
 		MADV_MERGEABLE);
@@ -97,6 +108,8 @@ bool kvm__arch_load_kernel_image(struct kvm *kvm, int fd_kernel, int fd_initrd,
 	void *pos, *kernel_end, *limit;
 	unsigned long guest_addr, kernel_offset;
 	ssize_t file_size;
+
+    pr_debug("[lkvm] kvm__arch_load_kernel_image");
 
 	/*
 	 * Linux requires the initrd and dtb to be mapped inside lowmem,

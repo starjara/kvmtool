@@ -47,6 +47,8 @@ void kvm_cpu__run(struct kvm_cpu *vcpu)
 
 static void kvm_cpu_signal_handler(int signum)
 {
+    //pr_debug("[lkvm] kvm_cpu_signal_handler : %d", signum);
+
 	if (signum == SIGKVMEXIT) {
 		if (current_kvm_cpu && current_kvm_cpu->is_running)
 			current_kvm_cpu->is_running = false;
@@ -264,6 +266,8 @@ int kvm_cpu__init(struct kvm *kvm)
 	max_cpus = kvm__max_cpus(kvm);
 	recommended_cpus = kvm__recommended_cpus(kvm);
 
+    pr_debug("[lkvm] kvm_cpu__init");
+
 	if (kvm->cfg.nrcpus > max_cpus) {
 		printf("  # Limit the number of CPUs to %d\n", max_cpus);
 		kvm->cfg.nrcpus = max_cpus;
@@ -308,6 +312,9 @@ int kvm_cpu__exit(struct kvm *kvm)
 {
 	int i, r;
 	void *ret = NULL;
+
+    pr_debug("[lkvm] kvm_cpu__exit");
+    kvm_cpu__show_registers(kvm->cpus[0]);
 
 	kvm_cpu__delete(kvm->cpus[0]);
 	kvm->cpus[0] = NULL;

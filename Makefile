@@ -51,6 +51,7 @@ OBJS	+= builtin-run.o
 OBJS	+= builtin-setup.o
 OBJS	+= builtin-stop.o
 OBJS	+= builtin-version.o
+OBJS	+= builtin-mini.o # custom obj
 OBJS	+= devices.o
 OBJS	+= disk/core.o
 OBJS	+= framebuffer.o

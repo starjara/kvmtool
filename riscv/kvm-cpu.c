@@ -26,6 +26,8 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id)
 	int coalesced_offset, mmap_size;
 	struct kvm_one_reg reg;
 
+    pr_debug("[lkvm] kvm_cpu__arch_init");
+
 	vcpu = calloc(1, sizeof(struct kvm_cpu));
 	if (!vcpu)
 		return NULL;
@@ -52,6 +54,7 @@ struct kvm_cpu *kvm_cpu__arch_init(struct kvm *kvm, unsigned long cpu_id)
 			     vcpu->vcpu_fd, 0);
 	if (vcpu->kvm_run == MAP_FAILED)
 		die("unable to mmap vcpu fd");
+    pr_debug("\t[lkvm] mmap : %p, size : %d", vcpu->kvm_run, mmap_size);
 
 	coalesced_offset = ioctl(kvm->sys_fd, KVM_CHECK_EXTENSION,
 				 KVM_CAP_COALESCED_MMIO);
@@ -212,6 +215,9 @@ static void kvm_cpu__show_csrs(struct kvm_cpu *vcpu)
 	unsigned long data;
 	int debug_fd = kvm_cpu__get_debug_fd();
 
+    static unsigned long old = 0;
+    static unsigned long new = 0;
+
 	reg.addr = (unsigned long)&data;
 	dprintf(debug_fd, "\n Control Status Registers:\n");
 	dprintf(debug_fd,   " ------------------------\n");
@@ -240,6 +246,12 @@ static void kvm_cpu__show_csrs(struct kvm_cpu *vcpu)
 	if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
 		die("KVM_GET_ONE_REG failed (satp)");
 	csr.satp = data;
+    new = csr.satp;
+    if(new != old) {
+        pr_debug("[lkvm] satp updated");
+        pr_debug("\told : 0x%lx, new : 0x%lx", old, new);
+        old = new;
+    }
 
 	reg.id		= RISCV_CSR_REG(stval);
 	if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
@@ -255,6 +267,7 @@ static void kvm_cpu__show_csrs(struct kvm_cpu *vcpu)
 	if (ioctl(vcpu->vcpu_fd, KVM_GET_ONE_REG, &reg) < 0)
 		die("KVM_GET_ONE_REG failed (sscartch)");
 	csr.sscratch = data;
+    
 	dprintf(debug_fd, " SSTATUS:  0x%016lx\n", csr.sstatus);
 	dprintf(debug_fd, " SIE:      0x%016lx\n", csr.sie);
 	dprintf(debug_fd, " STVEC:    0x%016lx\n", csr.stvec);
