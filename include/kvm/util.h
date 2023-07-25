@@ -143,4 +143,8 @@ struct kvm;
 void *mmap_hugetlbfs(struct kvm *kvm, const char *htlbfs_path, u64 size);
 void *mmap_anon_or_hugetlbfs(struct kvm *kvm, const char *hugetlbfs_path, u64 size);
 
+struct mini;
+void *mmap_hugetlbfs_mini(struct mini *mini, const char *htlbfs_path, u64 size);
+void *mmap_anon_or_hugetlbfs_mini(struct mini *mini, const char *hugetlbfs_path, u64 size);
+
 #endif /* KVM__UTIL_H */

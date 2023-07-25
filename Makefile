@@ -60,6 +60,7 @@ OBJS	+= hw/rtc.o
 OBJS	+= irq.o
 OBJS	+= kvm-cpu.o
 OBJS	+= kvm.o
+OBJS	+= mini.o	# custom obj
 OBJS	+= main.o
 OBJS	+= mmio.o
 OBJS	+= pci.o
@@ -216,6 +217,7 @@ ifeq ($(ARCH),riscv)
 	OBJS		+= riscv/ioport.o
 	OBJS		+= riscv/irq.o
 	OBJS		+= riscv/kvm.o
+	OBJS		+= riscv/mini.o # custom obj
 	OBJS		+= riscv/kvm-cpu.o
 	OBJS		+= riscv/pci.o
 	OBJS		+= riscv/plic.o

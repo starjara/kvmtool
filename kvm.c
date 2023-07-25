@@ -354,11 +354,13 @@ void *guest_flat_to_host(struct kvm *kvm, u64 offset)
 		u64 bank_start = bank->guest_phys_addr;
 		u64 bank_end = bank_start + bank->size;
         
-        //pr_debug("[lkvm] guest_flat_to_host");
+        pr_debug("[lkvm] guest_flat_to_host");
 
 		if (offset >= bank_start && offset < bank_end) {
-            //pr_debug("\t[lkvm] guest : 0x%llx", (unsigned long long)offset);
-            //pr_debug("\t[lkvm] host : 0x%llx", (unsigned long long)(bank->host_addr + (offset - bank_start)));
+            pr_debug("\t[lkvm] guest : 0x%llx", (unsigned long long)offset);
+            pr_debug("\t[lkvm] host : 0x%llx", (unsigned long long)(bank->host_addr + (offset - bank_start)));
+            u64 *addr = (unsigned long long*)(bank->host_addr + (offset - bank_start));
+            pr_debug("\t[lkvm] mem : 0x%llx", *addr);
 			return bank->host_addr + (offset - bank_start);
         }
 	}

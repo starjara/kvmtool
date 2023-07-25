@@ -98,6 +98,7 @@ void kvm__arch_init(struct kvm *kvm)
 
 	madvise(kvm->arch.ram_alloc_start, kvm->arch.ram_alloc_size,
 		MADV_HUGEPAGE);
+
 }
 
 #define FDT_ALIGN	SZ_4M

@@ -1,5 +1,5 @@
-#ifndef KVM__MINI_H
-#define KVM__MINI_H
+#ifndef KVM__BUILTIN_MINI_H
+#define KVM__BUILTIN_MINI_H
 
 #include <kvm/util.h>
 

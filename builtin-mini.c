@@ -2,10 +2,12 @@
 #include <kvm/kvm-cmd.h>
 #include <kvm/builtin-mini.h>
 #include <kvm/kvm.h>
+#include "kvm/mini.h"
 #include "kvm/kvm-cpu.h"
 #include "kvm/parse-options.h"
 #include "kvm/read-write.h"
 #include "kvm/builtin-debug.h"
+#include "kvm/util-init.h"
 
 #include <linux/err.h>
 #include <linux/list.h>
@@ -31,6 +33,8 @@ static const char * const mini_usage[] = {
     NULL
 };
 
+int *a;
+
 static const struct option mini_options[] = {
     OPT_GROUP("General options:"),
     OPT_INTEGER('m', "memory", &mem, "Memory size"),
@@ -39,7 +43,22 @@ static const struct option mini_options[] = {
     OPT_END()
 };
 
-static void parse_mini_options(struct kvm *kvm, int argc, const char **argv)
+/*
+static void parse_mini_options(struct mini *mini, int argc, const char **argv)
+{
+	while (argc != 0) {
+		argc = parse_options(argc, argv, mini_options, mini_usage,
+				PARSE_OPT_STOP_AT_NON_OPTION);
+		if (argc != 0)
+			kvm_mini_help();
+    }
+
+    mini->cfg.ram_size = mem << 20;
+    mini->cfg.guest_name = instance_name;
+}
+*/
+
+static void parse_kvm_options(struct kvm *kvm, int argc, const char **argv)
 {
 	while (argc != 0) {
 		argc = parse_options(argc, argv, mini_options, mini_usage,
@@ -59,6 +78,39 @@ void kvm_mini_help(void)
 	usage_with_options(mini_usage, mini_options);
 }
 
+/*
+static int mini_struct_init (struct mini *mini)
+{
+    mini->cfg.ram_addr = kvm__arch_default_ram_address();
+    mini->cfg.dev = DEFAULT_KVM_DEV;
+    mini->sys_fd = open(mini->cfg.dev, O_RDWR);
+    mini->cfg.nrcpus = 1;
+
+    printf("[lkvm] mini_struct_init\n");
+
+    if(ioctl(mini->sys_fd, KVM_GET_API_VERSION, 0) != KVM_API_VERSION) {
+        pr_err("KVM_API_VERSION ioctl");
+        return -1;
+    }
+
+	mini->vm_fd = ioctl(mini->sys_fd, KVM_CREATE_VM, mini__get_vm_type(mini));
+    
+	if (mini->vm_fd < 0) {
+		pr_err("KVM_CREATE_VM ioctl");
+        return -1;
+    }
+
+    mini__arch_init(mini);
+    
+    INIT_LIST_HEAD(&mini->mem_banks);
+    mini__init_ram(mini);
+
+
+
+    return 0;
+}
+*/
+
 static int kvm_struct_init (struct kvm *kvm)
 {
     kvm->cfg.ram_addr = kvm__arch_default_ram_address();
@@ -66,12 +118,15 @@ static int kvm_struct_init (struct kvm *kvm)
     kvm->sys_fd = open(kvm->cfg.dev, O_RDWR);
     kvm->cfg.nrcpus = 1;
 
+    printf("[lkvm] kvm_struct_init\n");
+
     if(ioctl(kvm->sys_fd, KVM_GET_API_VERSION, 0) != KVM_API_VERSION) {
         pr_err("KVM_API_VERSION ioctl");
         return -1;
     }
 
 	kvm->vm_fd = ioctl(kvm->sys_fd, KVM_CREATE_VM, kvm__get_vm_type(kvm));
+    
 	if (kvm->vm_fd < 0) {
 		pr_err("KVM_CREATE_VM ioctl");
         return -1;
@@ -82,17 +137,42 @@ static int kvm_struct_init (struct kvm *kvm)
     INIT_LIST_HEAD(&kvm->mem_banks);
     kvm__init_ram(kvm);
 
+
+
     return 0;
 }
 
-static struct kvm *kvm_cmd_mini_init (int argc, const char **argv) 
+/*
+static struct mini *kvm_cmd_mini_init (int argc, const char **argv) 
+{
+    struct mini *mini = mini__new();
+    
+    if (IS_ERR(mini))
+            return mini;
+
+    parse_mini_options(mini, argc, argv);
+
+    if(mini_struct_init(mini) != 0) {
+        free(mini);
+        return mini;
+    }
+
+   // if(kvm_cpu__init(mini) != 0) {
+   //     free(kvm);
+   //     return kvm;
+   // }
+
+    return mini;
+}
+*/
+static struct kvm *kvm_cmd_struct_init (int argc, const char **argv) 
 {
     struct kvm *kvm = kvm__new();
     
     if (IS_ERR(kvm))
             return kvm;
 
-    parse_mini_options(kvm, argc, argv);
+    parse_kvm_options(kvm, argc, argv);
 
     if(kvm_struct_init(kvm) != 0) {
         free(kvm);
@@ -106,6 +186,7 @@ static struct kvm *kvm_cmd_mini_init (int argc, const char **argv)
 
     return kvm;
 }
+/*
 
 static void kvm_mini__reset_vcpu(struct kvm_cpu *vcpu)
 {
@@ -137,6 +218,11 @@ static int kvm_mini__start(struct kvm_cpu *cpu)
     while(cpu->is_running) {
         printf("cpu ruuning\n");
         kvm_cpu__show_registers(cpu);
+
+        a = malloc (sizeof(int) * 10);
+        a[0] = 20;
+        printf("%p %d %p\n", a, a[0], &a);
+
         cpu->is_running = false;
     }
 
@@ -158,18 +244,45 @@ static void *kvm_mini_thread(void *arg)
 	return (void *) (intptr_t) 0;
 
 }
+*/
 
-static int kvm_boot_mini(struct kvm *kvm) 
+static int kvm_load_mini(struct kvm *kvm) 
 {
     int ret = 0;
+    struct kvm_cpu *cur = kvm->cpus[0];
 
     printf("kvm_boot_mini\n");
 
-    pthread_create(&kvm->cpus[0]->thread, NULL, kvm_mini_thread, kvm->cpus[0]);
+	ioctl(cur->vcpu_fd, KVM_INIT_MINI, 0);
 
-    pthread_join(kvm->cpus[0]->thread, NULL);
+    //pthread_create(&kvm->cpus[0]->thread, NULL, kvm_mini_thread, kvm->cpus[0]);
+
+    //pthread_join(kvm->cpus[0]->thread, NULL);
+
+
 
     return ret;
+}
+
+static int kvm_write_mini(struct kvm *kvm)
+{
+    struct kvm_cpu *cur = kvm->cpus[0];
+
+    printf("kvm_write_mini\n");
+
+    ioctl(cur->vcpu_fd, KVM_WRITE_MINI, 0);
+    return 0;
+}
+
+//static int kvm_read_mini(struct kvm *kvm, void *addr, void *data, int length)
+static int kvm_read_mini(struct kvm *kvm)
+{
+    struct kvm_cpu *cur = kvm->cpus[0];
+
+    printf("kvm_read_mini\n");
+
+    ioctl(cur->vcpu_fd, KVM_READ_MINI, 0);
+    return 0;
 }
 
 int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
@@ -179,15 +292,38 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     static struct kvm *kvm;
 
     if(kvm == NULL) {
-        kvm = kvm_cmd_mini_init(argc, argv);
+        kvm = kvm_cmd_struct_init(argc, argv);
         if (IS_ERR(kvm))
             return PTR_ERR(kvm);
 
-        printf("vm create complete\n");
+        printf("kvm create complete\n");
         printf("name : %s\n", kvm->cfg.guest_name);
         printf("size : %lld\n", kvm->cfg.ram_size);
+        
+        //unsigned int *ram_start = (unsigned int*)kvm->ram_start;
+        //printf("ramstart : %p : 0x%x\n", ram_start, *ram_start);
     }
-    kvm_boot_mini(kvm);
+
+    kvm_load_mini(kvm);
+    char *data = (char *)guest_flat_to_host(kvm, 0x80200000);
+    printf("%s\n", data);
+
+    kvm_write_mini(kvm);
+    kvm_read_mini(kvm);
+
+    /*
+    static struct mini *mini;
+    if(mini == NULL) {
+        mini = kvm_cmd_mini_init(argc, argv);
+        if (IS_ERR(mini))
+            return PTR_ERR(mini);
+
+        printf("mini create complete\n");
+        printf("name : %s\n", mini->cfg.guest_name);
+        printf("size : %lld\n", mini->cfg.ram_size);
+    }
+    */
+
 
 
     /*

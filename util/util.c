@@ -3,6 +3,7 @@
  */
 
 #include "kvm/util.h"
+#include <kvm/mini.h>
 
 #include <kvm/kvm.h>
 #include <linux/magic.h>	/* For HUGETLBFS_MAGIC */
@@ -128,6 +129,58 @@ void *mmap_anon_or_hugetlbfs(struct kvm *kvm, const char *hugetlbfs_path, u64 si
 		return mmap_hugetlbfs(kvm, hugetlbfs_path, size);
 	else {
 		kvm->ram_pagesize = getpagesize();
+		return mmap(NULL, size, PROT_RW, MAP_ANON_NORESERVE, -1, 0);
+	}
+}
+
+void *mmap_hugetlbfs_mini(struct mini *mini, const char *htlbfs_path, u64 size)
+{
+	char mpath[PATH_MAX];
+	int fd;
+	struct statfs sfs;
+	void *addr;
+	unsigned long blk_size;
+
+	if (statfs(htlbfs_path, &sfs) < 0)
+		die("Can't stat %s\n", htlbfs_path);
+
+	if ((unsigned int)sfs.f_type != HUGETLBFS_MAGIC)
+		die("%s is not hugetlbfs!\n", htlbfs_path);
+
+	blk_size = (unsigned long)sfs.f_bsize;
+	if (sfs.f_bsize == 0 || blk_size > size) {
+		die("Can't use hugetlbfs pagesize %ld for mem size %lld\n",
+			blk_size, (unsigned long long)size);
+	}
+
+	mini->ram_pagesize = blk_size;
+
+	snprintf(mpath, PATH_MAX, "%s/kvmtoolXXXXXX", htlbfs_path);
+	fd = mkstemp(mpath);
+	if (fd < 0)
+		die("Can't open %s for hugetlbfs map\n", mpath);
+	unlink(mpath);
+	if (ftruncate(fd, size) < 0)
+		die("Can't ftruncate for mem mapping size %lld\n",
+			(unsigned long long)size);
+	addr = mmap(NULL, size, PROT_RW, MAP_PRIVATE, fd, 0);
+	close(fd);
+
+	return addr;
+}
+
+/* This function wraps the decision between hugetlbfs map (if requested) or normal mmap */
+
+void *mmap_anon_or_hugetlbfs_mini(struct mini *mini, const char *hugetlbfs_path, u64 size)
+{
+	if (hugetlbfs_path)
+		/*
+		 * We don't /need/ to map guest RAM from hugetlbfs, but we do so
+		 * if the user specifies a hugetlbfs path.
+		 */
+		return mmap_hugetlbfs_mini(mini, hugetlbfs_path, size);
+	else {
+		mini->ram_pagesize = getpagesize();
 		return mmap(NULL, size, PROT_RW, MAP_ANON_NORESERVE, -1, 0);
 	}
 }
