@@ -267,10 +267,25 @@ static int kvm_load_mini(struct kvm *kvm)
 static int kvm_write_mini(struct kvm *kvm)
 {
     struct kvm_cpu *cur = kvm->cpus[0];
+    struct mini_data data;
+
+    /*
+    data.gpa = 0x80200000;
+    data.data = (void *)dat;
+    data.len = 5;
+    */
+
+    data = (struct mini_data) {
+        .gpa = 0x80200000,
+        .data = {'z','x','c','v'},
+        .len = sizeof(data.data),
+    };
 
     printf("kvm_write_mini\n");
 
-    ioctl(cur->vcpu_fd, KVM_WRITE_MINI, 0);
+    printf("0x%llx %s %d\n", data.gpa, (char *)data.data, data.len);
+
+    ioctl(cur->vcpu_fd, KVM_WRITE_MINI, &data);
     return 0;
 }
 
@@ -278,10 +293,28 @@ static int kvm_write_mini(struct kvm *kvm)
 static int kvm_read_mini(struct kvm *kvm)
 {
     struct kvm_cpu *cur = kvm->cpus[0];
+    struct mini_data data;
 
     printf("kvm_read_mini\n");
 
-    ioctl(cur->vcpu_fd, KVM_READ_MINI, 0);
+    data = (struct mini_data) {
+        .gpa = 0x80200000,
+        .data = {0, },
+        .len = sizeof(data.data),
+    };
+
+    printf("before : 0x%llx: %s\n", data.gpa, (char *)data.data);
+    
+    ioctl(cur->vcpu_fd, KVM_READ_MINI, &data);
+
+    printf("after : 0x%llx: %s\n", data.gpa, (char *)data.data);
+
+    int i = 1;
+    char dat = (char) data.data[0];
+    while (dat != 0) { 
+        printf("data : %c\n", dat);
+        dat = data.data[i++];
+    }
     return 0;
 }
 
@@ -305,11 +338,17 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     }
 
     kvm_load_mini(kvm);
-    char *data = (char *)guest_flat_to_host(kvm, 0x80200000);
-    printf("%s\n", data);
 
     kvm_write_mini(kvm);
     kvm_read_mini(kvm);
+
+    int i = 1;
+    char *data = (char *)guest_flat_to_host(kvm, 0x80200000);
+    printf("data : 0x%p: %s\n", data, data);
+    while (*data != 0) { 
+        printf("data : 0x%p: %c\n", data, *data);
+        data = (char *)guest_flat_to_host(kvm, 0x80200000 + (i++) * sizeof(__u32));
+    }
 
     /*
     static struct mini *mini;
