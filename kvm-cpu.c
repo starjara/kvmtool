@@ -40,6 +40,7 @@ void kvm_cpu__run(struct kvm_cpu *vcpu)
 	if (!vcpu->is_running)
 		return;
 
+
 	err = ioctl(vcpu->vcpu_fd, KVM_RUN, 0);
 	if (err < 0 && (errno != EINTR && errno != EAGAIN))
 		die_perror("KVM_RUN failed");
@@ -251,7 +252,7 @@ int kvm_cpu__start(struct kvm_cpu *cpu)
 		}
 		kvm_cpu__handle_coalesced_mmio(cpu);
 	}
-
+    
 exit_kvm:
 	return 0;
 

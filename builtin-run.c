@@ -255,6 +255,20 @@ static void *kvm_cpu_thread(void *arg)
 	if (kvm_cpu__start(current_kvm_cpu))
 		goto panic_kvm;
 
+    /*
+    pr_debug("kvm_cpu_thread exit =======================\n");
+    kvm_cpu__show_registers(current_kvm_cpu);
+
+    getchar();
+        long val = 0;
+        pr_debug("val : %ld\n", val);
+        asm volatile(".word 0x6801CFF3\n");   
+        asm ("mv a0, %0\n\t" :: "r" ((val == 0) ? 1 : val) : "ra");
+        pr_debug("val : %ld\n", val);
+
+    kvm_cpu__show_registers(current_kvm_cpu);
+    */
+
 	return (void *) (intptr_t) 0;
 
 panic_kvm:

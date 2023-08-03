@@ -186,7 +186,6 @@ static struct kvm *kvm_cmd_struct_init (int argc, const char **argv)
 
     return kvm;
 }
-/*
 
 static void kvm_mini__reset_vcpu(struct kvm_cpu *vcpu)
 {
@@ -200,6 +199,14 @@ static void kvm_mini__reset_vcpu(struct kvm_cpu *vcpu)
 
 	reg.addr = (unsigned long)&data;
 
+    /*
+	//data	= kvm->arch.kern_guest_start;
+    data = 0x0000000000013e6e;
+	reg.id	= RISCV_CORE_REG(regs.pc);
+	if (ioctl(vcpu->vcpu_fd, KVM_SET_ONE_REG, &reg) < 0)
+		die_perror("KVM_SET_ONE_REG failed (pc)");
+    */
+
 	data	= vcpu->cpu_id;
 	reg.id	= RISCV_CORE_REG(regs.a0);
 	if (ioctl(vcpu->vcpu_fd, KVM_SET_ONE_REG, &reg) < 0)
@@ -211,6 +218,7 @@ static void kvm_mini__reset_vcpu(struct kvm_cpu *vcpu)
 		die_perror("KVM_SET_ONE_REG failed (a1)");
 }
 
+/*
 static int kvm_mini__start(struct kvm_cpu *cpu)
 {
     kvm_mini__reset_vcpu(cpu);
@@ -253,13 +261,20 @@ static int kvm_load_mini(struct kvm *kvm)
 
     printf("kvm_boot_mini\n");
 
-	ioctl(cur->vcpu_fd, KVM_INIT_MINI, 0);
+    kvm_mini__reset_vcpu(cur);
 
+    a = malloc(sizeof(int));
+    *a = 10;
+    printf("%p,\t%d\n", a, *a);
+
+	ioctl(cur->vcpu_fd, KVM_INIT_MINI, 0);
+    printf("%p,\t%d\n", a, *a);
+
+    char *data = (char *)guest_flat_to_host(kvm, 0x80000000);
+    printf("data : 0x%p: %s\n", data, data);
     //pthread_create(&kvm->cpus[0]->thread, NULL, kvm_mini_thread, kvm->cpus[0]);
 
     //pthread_join(kvm->cpus[0]->thread, NULL);
-
-
 
     return ret;
 }
@@ -268,12 +283,6 @@ static int kvm_write_mini(struct kvm *kvm)
 {
     struct kvm_cpu *cur = kvm->cpus[0];
     struct mini_data data;
-
-    /*
-    data.gpa = 0x80200000;
-    data.data = (void *)dat;
-    data.len = 5;
-    */
 
     data = (struct mini_data) {
         .gpa = 0x80200000,
@@ -338,6 +347,8 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     }
 
     kvm_load_mini(kvm);
+
+    //asm volatile(".word 0x6A10C073\n");   
 
     kvm_write_mini(kvm);
     kvm_read_mini(kvm);
