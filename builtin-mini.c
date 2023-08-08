@@ -353,6 +353,7 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     kvm_write_mini(kvm);
     kvm_read_mini(kvm);
 
+    /*
     int i = 1;
     char *data = (char *)guest_flat_to_host(kvm, 0x80200000);
     printf("data : 0x%p: %s\n", data, data);
@@ -360,6 +361,7 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
         printf("data : 0x%p: %c\n", data, *data);
         data = (char *)guest_flat_to_host(kvm, 0x80200000 + (i++) * sizeof(__u32));
     }
+    */
 
     /*
     static struct mini *mini;
@@ -387,6 +389,19 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
 	ioctl(kvm->cpus[0]->vcpu_fd, KVM_SET_ONE_REG, &reg);
     kvm_cpu__show_registers(kvm->cpus[0]);
     */
+
+    /*
+    unsigned long val, guest_addr;
+    guest_addr = 0x80000000;
+    pr_debug("val : 0x%lx\n", val);
+    asm volatile(HLV_D(%[val], %[addr]) :[val] "=&r" (val): [addr] "r" (guest_addr) );
+    pr_debug("val : 0x%lx\n", val);
+    */
+
+    // HLV_W
+    asm volatile(".word 0x68094F73\n");   
+    // HLV_D
+    asm volatile(".word 0x6C094F73\n");   
 
     printf("main done\n");
 
