@@ -3,7 +3,7 @@
  */
 
 #include "kvm/util.h"
-#include <kvm/mini.h>
+#include <mini/mini.h>
 
 #include <kvm/kvm.h>
 #include <linux/magic.h>	/* For HUGETLBFS_MAGIC */

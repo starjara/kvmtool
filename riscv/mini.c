@@ -1,11 +1,12 @@
 #include "kvm/kvm.h"
-#include "kvm/mini.h"
+#include "mini/mini.h"
 #include "kvm/util.h"
 
 #include <linux/kernel.h>
 #include <linux/kvm.h>
 #include <linux/sizes.h>
 
+/*
 void mini__arch_init(struct mini *mini)
 {
     pr_debug("[lkvm] mini__arch_init");
@@ -56,3 +57,4 @@ void mini__init_ram (struct mini *mini)
 
     pr_debug("\t[lkvm] mini->arch.memory_guest_start : 0x%llx", mini->arch.memory_guest_start);
 }
+*/
