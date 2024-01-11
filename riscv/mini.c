@@ -1,18 +1,17 @@
-#include "kvm/kvm.h"
 #include "mini/mini.h"
+#include "kvm/kvm.h"
 #include "kvm/util.h"
 
 #include <linux/kernel.h>
-#include <linux/kvm.h>
+#include <linux/mini.h>
 #include <linux/sizes.h>
 
-/*
 void mini__arch_init(struct mini *mini)
 {
     pr_debug("[lkvm] mini__arch_init");
 
 	mini->ram_size = min(mini->cfg.ram_size, (u64)RISCV_MAX_MEMORY(mini));
-	mini->arch.ram_alloc_size = mini->ram_size + SZ_2M;
+	mini->arch.ram_alloc_size = mini->ram_size + SZ_1;
     mini->arch.ram_alloc_start = mmap_anon_or_hugetlbfs_mini(mini, 
             mini->cfg.hugetlbfs_path,
             mini->arch.ram_alloc_size);
@@ -26,7 +25,7 @@ void mini__arch_init(struct mini *mini)
                 mini->arch.ram_alloc_size, errno);                  
     }
 
-	mini->ram_start = (void *)ALIGN((unsigned long)mini->arch.ram_alloc_start, SZ_2M);
+	mini->ram_start = (void *)ALIGN((unsigned long)mini->arch.ram_alloc_start, SZ_1);
 
     pr_debug("\t[lkvm] mini->ram_start : 0x%lx", (unsigned long)mini->ram_start);
 
@@ -57,4 +56,3 @@ void mini__init_ram (struct mini *mini)
 
     pr_debug("\t[lkvm] mini->arch.memory_guest_start : 0x%llx", mini->arch.memory_guest_start);
 }
-*/

@@ -2,7 +2,7 @@
 #include <kvm/kvm-cmd.h>
 #include <kvm/builtin-mini.h>
 #include <kvm/kvm.h>
-#include "kvm/mini.h"
+//#include "kvm/mini.h"
 #include "kvm/kvm-cpu.h"
 #include "kvm/parse-options.h"
 #include "kvm/read-write.h"
@@ -178,12 +178,12 @@ static struct kvm *kvm_cmd_struct_init (int argc, const char **argv)
 
     if(kvm_struct_init(kvm) != 0) {
         free(kvm);
-        return kvm;
+        return NULL;
     }
 
     if(kvm_cpu__init(kvm) != 0) {
         free(kvm);
-        return kvm;
+        return NULL;
     }
 
     return kvm;
@@ -412,14 +412,47 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     */
 
     // HLV_W
-    clock_t c0 = clock();
-    asm volatile(".word 0x68094F73\n");   
-    clock_t c1 = clock();
+    //clock_t c0 = clock();
+    //asm volatile(".word 0x68094F73\n");   
+    //unsigned long val, guest_addr;
+    //val = 0;
+    //guest_addr=0x80000000;
+    //asm volatile(".word 0x015a6c50\n" : [val] "=&r" (val): [addr] "r" (guest_addr));   
+    //asm volatile(".word 0x6c03c2f3\n");   
+    register unsigned long taddr asm("a0") = 0x80000000;
+    register unsigned long ttmp asm("a1");
+    register unsigned long val asm("t0");
+    register unsigned long addr asm("t2") = 0x80000000;
+    asm volatile ("\n"
+        ".option push\n"
+        ".option norvc\n"
+        "add %[ttmp], %[taddr], 0\n"
+    //#ifdef CONFIG_64BIT
+        /*
+        * HLV.D %[val], (%[addr])
+        * HLV.D t0, (t2)
+        * 0110110 00000 00111 100 00101 1110011
+        */
+    //    ".word 0x6c03c2f3\n"
+    //#else
+        /*
+        * HLV.W %[val], (%[addr])
+        * HLV.W t0, (t2)
+        * 0110100 00000 00111 100 00101 1110011
+        */
+        ".word 0x6803c2f3\n"
+    //#endif
+        ".option pop"
+        : [val] "=&r" (val),
+        [taddr] "+&r" (taddr), [ttmp] "+&r" (ttmp)
+        : [addr] "r" (addr) : "memory");
+    printf("%lx %lx\n", taddr, val);
+    //clock_t c1 = clock();
     // HLV_D
     //asm volatile(".word 0x6C094F73\n");   
 
     printf("main done\n");
-    printf("ms: %f %ld\n", (c1-c0) * 1000. / CLOCKS_PER_SEC, c1-c0);
+    //printf("ms: %f %ld\n", (c1-c0) * 1000. / CLOCKS_PER_SEC, c1-c0);
 
 
     //ioctl(kvm->cpus[0]->vcpu_fd, KVM_ENTER_MINI, 0);
@@ -446,7 +479,7 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
     pr_debug("reg : 0x%llx, addr : 0x%llx, val : 0x%lx\n", reg.id, reg.addr, satp);
     */
 
-    while(1);
+    //while(1);
 
     //ioctl(kvm->cpus[0]->vcpu_fd, KVM_EXIT_MINI, 0);
     kvm_fin_mini(kvm);
