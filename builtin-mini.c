@@ -326,8 +326,8 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
 
     printf("vm : 0x%x\n", mini->vm_fd);
     printf("vcpu : 0x%x\n", cur->vcpu_fd);
-    ioctl(cur->vcpu_fd, MINI_ALLOC, 0);
     ioctl(mini->vm_fd, MINI_ENTER, 0);
+    ioctl(cur->vcpu_fd, MINI_ALLOC, 0);
 
     printf("Hello world\n");
 
@@ -425,8 +425,11 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
 
     register unsigned long taddr asm("a0") = 0x80000000;
     register unsigned long ttmp asm("a1");
-    register unsigned long val asm("t0");
+    register unsigned long val asm("t0") = 0xFF;
     register unsigned long addr asm("t2") = 0x80000000;
+
+    //printf("before 0x%lx 0x%lx\n", taddr, val);
+
     asm volatile ("\n"
         ".option push\n"
         ".option norvc\n"
@@ -445,16 +448,17 @@ int kvm_cmd_mini(int argc, const char **argv, const char *prefix)
         * HLV.W t0, (t2)
         * 0110100 00000 00111 100 00101 1110011
         */
-
-        ".word 0x6803c2f3\n"
+        ".word 0x6A53C073\n" // HSV.W (t2), t0
+        ".word 0x6803c2f3\n" // HLV.W t0, (t2)
        
     //#endif
     //
         ".option pop"
-        : [val] "=&r" (val),
+        : [val] "+r" (val),
         [taddr] "+&r" (taddr), [ttmp] "+&r" (ttmp)
         : [addr] "r" (addr) : "memory");
-    printf("before %lx %lx\n", taddr, val);
+
+    printf("after taddr %lx val %lx\n", taddr, val);
 
     ioctl(mini->vm_fd, MINI_EXIT, 0);
 
