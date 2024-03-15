@@ -26,7 +26,17 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 
+<<<<<<< Updated upstream
 #include <sys/eventfd.h>
+=======
+#define HLVX_HU(dest, addr)					\
+	INSN_R(OPCODE_SYSTEM, FUNC3(4), FUNC7(50),		\
+	       RD(dest), RS1(addr), __RS2(3))
+
+#define HLV_W(dest, addr)					\
+	INSN_R(OPCODE_SYSTEM, FUNC3(4), FUNC7(52),		\
+	       RD(dest), RS1(addr), __RS2(0))
+>>>>>>> Stashed changes
 
 __thread struct kvm_cpu *current_kvm_mini_cpu;
 
